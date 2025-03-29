@@ -1,12 +1,23 @@
 import logging
+import magpack.vectorop
 import numpy as np
 import copy
 from typing import Union
-import dft
-import structures
+import magneticScattering.dft as dft
+import magneticScattering.structures as structures
+from typing import cast
 
 
-def pauli():
+def _typecast_roi(roi):
+    """Casts a roi array into tuple[float,float,float,float] for type matching."""
+    return cast(tuple[float, float, float, float], roi)
+
+
+def pauli() -> np.ndarray:
+    """Returns an array of the identity and three Pauli matrices.
+
+    :return:    Numpy array of shape (4, 2, 2).
+    """
     p_matrix = np.zeros([4, 2, 2], dtype=np.complex128)
     p_matrix[0] = np.eye(2)
     p_matrix[1] = np.array([[1, 0], [0, -1]])
@@ -15,13 +26,23 @@ def pauli():
     return p_matrix
 
 
-def en2wave(energy):
-    """Converts energy in eV to wavelength in m."""
+def en2wave(energy: float) -> float:
+    """Converts energy in eV to wavelength in m.
+
+    :param energy:  Energy in electronvolts.
+    :return:        Wavelength in meters."""
     return 1.24e-6 / energy
 
 
 def vec2np(vec: Union[float, list, complex, int, np.ndarray], size=2, dtype=np.float64):
-    if isinstance(vec, list):
+    """Converts a scalar or array value to an appropriately-sized numpy array.
+
+    :param vec:         Scalar value or list of scalar values.
+    :param size:        Size of the resulting numpy array.
+    :param dtype:       Datatype of the numpy array.
+    :return:            Numpy array.
+    """
+    if isinstance(vec, (tuple, list)):
         if len(vec) == 1:
             return np.array(vec * size, dtype=dtype)
         elif len(vec) == size:
@@ -42,9 +63,9 @@ class Beam:
     """Describes the properties of the beam.
 
     Attributes:
-        -wavelength :class:`float`:     The wavelength of the beam [m].
-        -fwhm :class:`np.ndarray`:      The full width at half maximum of the beam in x and y.
-        -pol :class:`list[float]`:      The polarization of the beam in Stokes parameters, 4 component list.
+        :wavelength: :class:`float`:     The wavelength of the beam [m].
+        :fwhm: :class:`np.ndarray`:      The full width at half maximum of the beam in x and y.
+        :pol: :class:`list[float]`:      The polarization of the beam in Stokes parameters, 4 component list.
     """
 
     def __init__(self, wavelength: float, fwhm: Union[np.ndarray, list[float], float],
@@ -81,6 +102,7 @@ class Beam:
 
     @property
     def tracker(self):
+        """Function to notify parent of any changes to the class. """
         return self._change_tracker
 
     @tracker.setter
@@ -89,6 +111,7 @@ class Beam:
 
     @property
     def wavelength(self):
+        """The wavelength of the beam. """
         return self._wavelength
 
     @wavelength.setter
@@ -98,6 +121,7 @@ class Beam:
 
     @property
     def fwhm(self):
+        """The full width at half maximum of the beam. """
         return self._fwhm
 
     @fwhm.setter
@@ -108,10 +132,12 @@ class Beam:
 
     @property
     def sigma(self):
+        """The spread of the beam. """
         return self._beam_sigma
 
     @property
     def pol(self):
+        """The polarisation of the beam. """
         return self._pol
 
     @pol.setter
@@ -121,15 +147,13 @@ class Beam:
         [f('pol') for f in self._change_tracker]
 
     @property
-    def beam_sigma(self):
-        return self._fwhm / np.sqrt(8 * np.log(2))
-
-    @property
     def density_matrix(self):
+        """Polarization density matrix."""
         return self._density_matrix
 
     @property
     def degree_of_pol(self):
+        """The degree of polarisation. """
         return self._degree_of_pol
 
 
@@ -137,10 +161,10 @@ class Sample:
     """Describes the sample properties.
 
     Attributes:
-        -sample_length :class:`np.ndarray`:          The dimensions of the sample [m].
-        -scattering_factors :class:`list[complex]`:  List of the three complex scattering factors.
-        -structure :class:`np.ndarray`:              The magnetic configuration of the sample, (4, X, Y) numpy array.
-        -reference_structure :class:`np.ndarray`:    Backup of the original structure for when the structure is rotated.
+        :sample_length: :class:`np.ndarray`:         The dimensions of the sample [m].
+        :scattering_factors: :class:`list[complex]`: List of the three complex scattering factors.
+        :structure: :class:`np.ndarray`:             The magnetic configuration of the sample, (4, X, Y) numpy array.
+        :reference_structure: :class:`np.ndarray`:   Backup of the original structure for when the structure is rotated.
     """
 
     def __init__(self, sample_length: Union[np.ndarray, list[float], float],
@@ -148,9 +172,14 @@ class Sample:
         self._sample_length = vec2np(sample_length)
         self._scattering_factors = vec2np(scattering_factors, 3, dtype=np.complex128)
 
-        if structure.ndim != 3 or structure.shape[0] != 4:
-            logging.error("Structure has wrong shape, must be (4, x, y).")
-            raise ValueError
+        if structure.ndim != 3:
+            raise ValueError("Structure has wrong shape, must be (3 or 4, x, y).")
+        if structure.shape[0] == 3:
+            # add a charge component in place of the magnetization
+            charge = magpack.vectorop.magnitude(structure) > 0
+            structure = np.concatenate([charge[np.newaxis, ...], structure], axis=0)
+        elif structure.shape[0] != 4:
+            raise ValueError("Structure has wrong shape, must be (3 or 4, x, y).")
 
         self._structure = copy.deepcopy(structure)
         self._pix_size = self.calc_pix_size()
@@ -158,6 +187,7 @@ class Sample:
 
     @property
     def tracker(self):
+        """Function to notify parent of any changes to the class. """
         return self._change_tracker
 
     @tracker.setter
@@ -165,10 +195,12 @@ class Sample:
         self._change_tracker.append(parent_tracker_function)
 
     def calc_pix_size(self):
+        """Calculates the size of a single pixel in the structure."""
         return np.divide(self._sample_length, self.shape)
 
     @property
     def sample_length(self):
+        """The lateral size of the entire sample or array configuration. """
         return self._sample_length
 
     @sample_length.setter
@@ -179,6 +211,7 @@ class Sample:
 
     @property
     def scattering_factors(self):
+        """The three complex scattering factors of the material."""
         return self._scattering_factors
 
     @scattering_factors.setter
@@ -188,10 +221,12 @@ class Sample:
 
     @property
     def shape(self):
+        """The shape of the sample. """
         return self._structure.shape[-2:]
 
     @property
     def pix_size(self):
+        """The pixel size of the sample; the size of a single pixel."""
         return self._pix_size
 
     @pix_size.setter
@@ -202,6 +237,7 @@ class Sample:
 
     @property
     def structure(self) -> np.ndarray:
+        """The charge and three magnetization components of the sample. """
         return self._structure
 
     @structure.setter
@@ -214,23 +250,25 @@ class Sample:
         [f('structure') for f in self._change_tracker]
 
     def get_extent(self):
+        """The extent of the sample for plotting."""
         extent_x = self.sample_length[0] * np.array([-0.5, 0.5])
         extent_y = self.sample_length[1] * np.array([-0.5, 0.5])
         return np.hstack([extent_x, extent_y])
 
-    def get_coordinates(self):
+    def get_coordinates(self) -> list[np.ndarray]:
+        """Meshgrid spanning the sample."""
         nx, ny = self.shape
         extent = self.get_extent()
         xx, yy = np.linspace(extent[0], extent[1], nx), np.linspace(extent[2], extent[3], ny)
-        return np.meshgrid(xx, yy, indexing='ij')
+        return list(np.meshgrid(xx, yy, indexing='ij'))
 
 
 class Geometry:
     """Defines the geometry of the experiment.
 
     Attributes:
-        angle :class:`float`:               The angle of incidence (and scattering) of the beam [degrees].
-        detector_distance :class:`float`:   The distance between the sample and the detector [m].
+        :angle: :class:`float`:               The angle of incidence (and scattering) of the beam [degrees].
+        :detector_distance: :class:`float`:   The distance between the sample and the detector [m].
     """
 
     def __init__(self, angle: float, detector_distance: float):
@@ -244,10 +282,12 @@ class Geometry:
 
     @tracker.setter
     def tracker(self, parent_tracker_function):
+        """Function to notify parent of any changes to the class."""
         self._change_tracker = parent_tracker_function
 
     @property
     def angle(self):
+        """The angle of incidence of the beam [degrees]."""
         return self._angle
 
     @angle.setter
@@ -257,6 +297,7 @@ class Geometry:
 
     @property
     def detector_distance(self):
+        """The distance between the sample and the detector [m]."""
         return self._detector_distance
 
     @detector_distance.setter
@@ -267,11 +308,12 @@ class Geometry:
 
 class Scatter:
     def __init__(self, beam: Beam, sample: Sample, geometry: Geometry):
-        """Initializes the Scatter class.
+        """Initializes the Scatter class and calculates the scattering pattern.
 
-        :param beam:        The beam properties form the Beam class.
-        :param sample:      The sample properties from the Sample class.
-        :param geometry:    The geometry of the experiment from the Geometry class.
+        Attributes:
+            :beam: :class:`Beam`:           The properties of the beam.
+            :sample: :class:`Sample`:       The sample being measured.
+            :geometry: :class:`Geometry`:   The geometry of the experiment.
         """
 
         self.beam = beam
@@ -287,18 +329,22 @@ class Scatter:
 
     @property
     def roi_shape(self):
+        """Shape of the region of interest."""
         return self._roi_shape
 
     @property
     def extent(self):
+        """The real space occupied by the scattering pattern."""
         return self._extent
 
     @property
     def angular_extent(self):
-        return np.rad2deg(self._extent / self.geometry.detector_distance)
+        """The solid angle that the scattering pattern occupies."""
+        return np.rad2deg(np.array(self._extent) / self.geometry.detector_distance)
 
     @property
     def roi(self):
+        """Region of interest for calculating the scattering pattern."""
         return self._roi
 
     @roi.setter
@@ -309,14 +355,17 @@ class Scatter:
 
     @property
     def roi_angular_extent(self):
+        """Solid angle that the selected region of interest occupies."""
         # angular extent in degrees around the center
-        return np.rad2deg(self._roi / self.geometry.detector_distance)
+        return np.rad2deg(np.array(self._roi) / self.geometry.detector_distance)
 
     def change_tracker(self, name):
-        logging.debug("Detected change in subclass attribute: {}.".format(name))
+        """Listens for any changes in any of the classes so that the scattering can be re-calculated."""
+        logging.info("Detected change in subclass attribute: {}.".format(name))
         if name in ['wavelength', 'sample_length', 'pix_size', 'detector_distance']:
-            self._get_extent()
+            self._roi = self._get_extent()
         elif name in ['pol', 'fwhm', 'scattering_factors', 'angle', 'structure']:
+            self._roi = self._get_extent()
             self.run()
         else:
             logging.error("Unknown attribute change detected: {}.".format(name))
@@ -324,9 +373,12 @@ class Scatter:
     def _get_extent(self):
         angular_space = 1 / (2 * self.sample.pix_size) * self.beam.wavelength
         real_space = angular_space * self.geometry.detector_distance
-        return np.array([-real_space[0], real_space[0], -real_space[1], real_space[1]])
+        roi = np.array([-real_space[0], real_space[0], -real_space[1], real_space[1]])
+        return _typecast_roi(roi)
 
     def run(self):
+        """Calculates the scattering pattern."""
+        # convolution of the beam with the structure
         conv_structure = self.sample.structure * structures.gaussian_2d(self.sample.get_coordinates(),
                                                                         self.beam.sigma)
         structure_sf = self._calc_scattering_factor(conv_structure)
@@ -351,8 +403,10 @@ class Scatter:
         return f
 
     def _calc_ft(self, structure_sf):
+        # initial scattering is done using fast Fourier transform.
         if np.allclose(self.extent, self.roi):
             fft_structure_sf = np.fft.fftshift(np.fft.fftn(structure_sf, axes=(-2, -1)), axes=(-2, -1))
+        # if a roi is selected, perform a discrete Fourier transform.
         else:
             roi_shape = self._roi_shape
             offset, sampling = dft.calc_params_from_roi(self.extent, self.roi, roi_shape)
@@ -365,4 +419,3 @@ class Scatter:
         mu_prime = np.einsum('ijab,jk,lkab->ilab', fft_sf, self.beam.density_matrix, fft_sf.conjugate())
         self.intensity = np.abs(np.einsum('iiab->ab', mu_prime))
         self.pol_out = np.abs(np.einsum('ijk,kjab->iab', pauli(), mu_prime))
-

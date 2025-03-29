@@ -3,16 +3,20 @@ from typing import Union
 
 
 def create_mesh(*args: [list[int]]):
-    """Creates a mesh centered around zero with the dimensions provided.
-
-    Example:
-        [x, y] = create_mesh(11, 8)
-        Returns a list of numpy arrays of a fleshed out meshgrid with dimensions (11, 8) with the x dimension ranging
-        from -5 to 5 and y from -3.5 to 3.5, both in steps on 1.
+    r"""Creates a mesh centered around zero with the dimensions provided.
 
     :param args:    Integer dimensions.
     :return:        List of mesh grids with the provided dimensions.
+
+    Example
+    _____________
+
+    To create a list of numpy arrays of a fleshed out meshgrid with dimensions (11, 8) with the x dimension ranging
+    from -5 to 5 and y from -3.5 to 3.5, both in steps on 1.
+
+    >>> [x, y] = create_mesh(11, 8)
     """
+
     if any(not isinstance(v, int) for v in args) or min(args) < 1:
         raise ValueError("Only positive integer values can be converted to a mesh.")
     vectors = map(lambda x: np.arange(x) - (x - 1) / 2, args)
@@ -22,9 +26,9 @@ def create_mesh(*args: [list[int]]):
 def cart2pol(x: Union[float, np.ndarray], y: Union[float, np.ndarray]) -> np.ndarray:
     """Converts cartesian coordinates to polar coordinates.
 
-    :param x:   x coordinate.
-    :param y:   y coordinate.
-    :return:    Array of polar coordinates with the first index running over r and theta.
+    :param x:   x coordinates.
+    :param y:   y coordinates.
+    :return:    Array of polar coordinates [radius, theta].
     """
     r = np.sqrt(x ** 2 + y ** 2)
     theta = np.arctan2(y, x)
@@ -34,9 +38,9 @@ def cart2pol(x: Union[float, np.ndarray], y: Union[float, np.ndarray]) -> np.nda
 def vortex(nx: int, ny: int) -> np.ndarray:
     """Creates a vortex with dimensions (nx, ny) at the center of the array.
 
-    :param nx:  x size
-    :param ny:  y size
-    :return:    Vortex state with dimensions (3, x, y), where the first index runs over components.
+    :param nx:  x size of the vortex.
+    :param ny:  y size of the vortex.
+    :return:    Vortex state with dimensions (3, x, y), where the first index runs over the components.
     """
     min_dim = min([nx, ny])
     xx, yy = create_mesh(nx, ny)
@@ -62,7 +66,7 @@ def skyrmion(nx: int, ny: int, number: int = 1, helicity: float = 0, polarity: i
     :param helicity:    Helicity offset.
     :param polarity:    mz magnetization at the center of the skyrmion.
     :param neel:        True for Neel type skyrmion, False (default) for Bloch type.
-    :return:            Skyrmion state with dimensions (3, x, y), where the first index runs over components..
+    :return:            Skyrmion state with dimensions (3, x, y), where the first index runs over components.
     """
 
     xx, yy = create_mesh(nx, ny)
@@ -87,7 +91,7 @@ def skyrmion(nx: int, ny: int, number: int = 1, helicity: float = 0, polarity: i
 
 
 def tessellate(unit_cell: np.ndarray, times: Union[int, list[int]], pattern: str = 'sq') -> np.ndarray:
-    """Create a crystal from the given unit cell.
+    """Create a lattice from the given unit cell.
 
     :param unit_cell:       Structure to be tessellated, shaped (..., nx, ny)
     :param times:           The amount of times to tessellate structure in both dimensions
@@ -138,11 +142,11 @@ def circle_mask(structure: np.ndarray) -> np.ndarray:
     return structure
 
 
-def pad_circle(structure: np.ndarray, times: float = 2, repeat_mode: str = 'edge') -> np.ndarray:
+def pad_circle(structure: np.ndarray, times: int = 2, repeat_mode: str = 'edge') -> np.ndarray:
     """Applies a circular mask and then pads the structure with the given repeat mode.
 
     :param structure:       Structure to be padded.
-    :param times:           The amount of times to pad the structure.
+    :param times:           The amount of padding as a multiple of the structure size.
     :param repeat_mode:     The mode to use for padding.
     :return:                Padded structure.
     """
@@ -157,12 +161,19 @@ def pad_circle(structure: np.ndarray, times: float = 2, repeat_mode: str = 'edge
         raise ValueError("Structure must be 2 or 3 dimensional.")
 
 
-def gaussian_2d(coords: list, sigma: list):
-    zz = [gaussian(ii, s) for ii, s in zip(coords, sigma)]
+def gaussian_2d(coords: list[np.ndarray], sigma: list[float, ...]) -> np.ndarray:
+    """Created a 2D gaussian centered around zero.
+
+    :param coords:      The coordinate system list (e.g. np.meshgrid(...)).
+    :param sigma:       A list of sigma values for the Gaussian.
+    :return:            The 2D Gaussian centered around zero."""
+
+    zz = [_gaussian(ii, s) for ii, s in zip(coords, sigma)]
     return np.multiply.reduce(zz)
 
 
-def gaussian(x, sigma):
+def _gaussian(x: np.ndarray, sigma: float):
+    """One-dimensional gaussian function."""
     if sigma <= 0:
         return np.ones_like(x)
     return np.exp(-(x ** 2 / (2 * sigma ** 2)))
