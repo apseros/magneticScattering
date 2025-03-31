@@ -6,11 +6,12 @@
 magneticScattering documentation
 ================================
 
-Package for simulating magnetic scattering.
-
+A python package for simulating magnetic scattering and holography.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   usage
+   examples
    magneticScattering

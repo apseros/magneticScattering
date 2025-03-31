@@ -18,7 +18,7 @@ def dichroism():
     detector_distance = 50e-2  # sample-detector distance
     sample_length = 10e-6  # sample size
     scattering_factors = [1j + 1, 1j + 1, 1 + 1j]  # scattering factors
-    reference_hole_size = 10 # size of reference hole in pixels
+    reference_hole_size = 3 # size of reference hole in pixels
 
     # load magnetic configuration
     inp_file = resources.files(magneticScattering.data) / 'labyrinthine.npy.gz'
@@ -55,7 +55,7 @@ def dichroism():
 
     # invert holography to recover structure
     plot.holography(s_cp, s_cl, log=True, recons_only=False)  # entire pattern
-    plot.holography(s_cl, s_cp)  # only sample reconstruction
+    plot.holography(s_cp, s_cl)  # only sample reconstruction
     plt.show()
 
 

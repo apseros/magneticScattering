@@ -204,7 +204,6 @@ def holography(scatter_a: Scatter, scatter_b=None, log: bool = False, recons_onl
         else:
             inverse = inverse[0:sx // 4, sy // 2 - sy // 8: sy // 2 + sy // 8]  # reference hole along x and y
             roi = [i / 4 for i in roi]
-    print(roi)
     prefix, scaled_roi = _choose_scale(roi)
     norm = colors.SymLogNorm(_lin_thresh_pow(inverse)) if log else None
 
