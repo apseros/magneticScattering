@@ -131,3 +131,8 @@ References
 
 van der Laan, G., "Theory from Soft X-ray resonant magnetic scattering of magnetic nano structures,"
 https://doi.org/10.1016/j.crhy.2007.06.004
+
+
+Documentation
+-------------
+Comprehensive documentation is available online at [readthedocs](https://magneticScattering.readthedocs.io/en/latest/index.html).

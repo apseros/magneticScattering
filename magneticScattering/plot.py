@@ -1,4 +1,3 @@
-from typing import Tuple
 from magneticScattering.holography import invert_holography
 from magneticScattering.scatter import *
 from matplotlib import colors
@@ -14,8 +13,21 @@ def _lin_thresh_pow(data):
     return 10 ** np.ceil(np.log10(np.cbrt(np.abs(data).max())))
 
 
-def _choose_scale(roi: Tuple[float, float, float, float]) -> Tuple[str, Tuple[float, float, float, float]]:
-    """Choose appropriate units for plotting based on the range of values."""
+def _choose_scale(roi):
+    """Choose appropriate units for plotting based on the range of values.
+
+    Parameters
+    ----------
+    roi : tuple of float
+        Region of interest coordinates.
+
+    Returns
+    -------
+    prefix : str
+        Units that will be used for plotting.
+    scaled_roi : 4-tuple of float
+        Region of interest scaled to account for the new units.
+    """
 
     # Compute the log10 scale difference in x and y directions
     dx, dy = np.log10([roi[1] - roi[0], roi[3] - roi[2]])
@@ -33,12 +45,18 @@ def _choose_scale(roi: Tuple[float, float, float, float]) -> Tuple[str, Tuple[fl
     return prefix, cast(tuple[float, float, float, float], scaled_roi)
 
 
-def structure(struct: Sample, **kwargs) -> None:
+def structure(struct: Sample, **kwargs):
     """Plot the components of magnetisation structure.
 
-    :param struct:  Sample class.
-    :param kwargs:  Keyword arguments for matplotlib imshow.
-    :return:        None.
+    Parameters
+    ----------
+    struct : Sample
+        The sample to plot the charge and magnetisation components.
+
+    Other Parameters
+    ----------------
+    kwargs : dict
+        Keyword arguments for matplotlib imshow.
     """
     extent = struct.get_extent()
     prefix, scaled_roi = _choose_scale(extent)
@@ -62,9 +80,17 @@ def structure(struct: Sample, **kwargs) -> None:
 def pol(scatter: Scatter, log=True, **kwargs) -> None:
     """Plot the polarization states of the scattered light.
 
-    :param scatter:     Scatter class.
-    :param log:         Logarithmic scale
-    :return:            None.
+    Parameters
+    ----------
+    scatter : Scatter
+        Class containing the intensity to view the different polarization states.
+    log : bool
+        Set to True for logarithmic scale.
+
+    Other Parameters
+    ----------------
+    kwargs : dict
+        Keyword arguments for matplotlib imshow.
     """
     roi = scatter.roi
     prefix, scaled_roi = _choose_scale(roi)
@@ -89,11 +115,19 @@ def pol(scatter: Scatter, log=True, **kwargs) -> None:
 def difference(scatter_a: Scatter, scatter_b: Scatter, log: bool = False, cmap: str = 'Spectral', **kwargs) -> None:
     """Plot the difference between two scattering patterns.
 
-    :param scatter_a:   Scatter class.
-    :param scatter_b:   Scatter class.
-    :param log:         Boolean choice to plot in log scale.
-    :param cmap:        Color map to use.
-    :return:            None.
+    Parameters
+    ----------
+    scatter_a, scatter_b : Scatter
+        The classes containing the two patterns for which the difference will be plotted.
+    log : bool (optional)
+        Boolean choice to plot in log scale.
+    cmap : str (optional)
+        Color map to use.
+
+    Other Parameters
+    ----------------
+    kwargs : dict
+        Keyword arguments for matplotlib imshow.
     """
     if np.any(scatter_a.roi != scatter_b.roi):
         raise ValueError("Diffraction geometries have different parameters.")
@@ -115,10 +149,23 @@ def difference(scatter_a: Scatter, scatter_b: Scatter, log: bool = False, cmap: 
 
 def intensity_interactive(scatter: Scatter, log: bool = False, **kwargs) -> tuple[float, float, float, float]:
     """Interactive plot of the intensity difference that can be used for selecting regions to view in higher resolution.
-    :param scatter: Scatter class.
-    :param log:     Boolean choice to plot in log scale.
-    :param kwargs:  Keyword arguments passed to matplotlib imshow
-    :return:        Coordinates of the selected region edges.
+
+    Parameters
+    ----------
+    scatter : Scatter
+        The scatter class to plot the intensity for.
+    log : bool (optional)
+        Boolean choice to plot in log scale.
+
+    Returns
+    -------
+    4-tuple of floats
+        The interactively-selected region of interest coordinates.
+
+    Other Parameters
+    ----------------
+    kwargs : dict
+        Keyword arguments for matplotlib imshow.
     """
     selected_regions = []
 
@@ -162,13 +209,20 @@ def _intensity_image(ax: Axes, fig, intensity_array, norm, scaled_roi, x_prefix,
     ax.axis('scaled')
 
 
-def intensity(scatter: Scatter, log: bool = False, **kwargs) -> None:
+def intensity(scatter, log = False, **kwargs):
     """Plot the intensity of the scattered light.
 
-    :param scatter:     Scatter class.
-    :param log:         Boolean choice to plot in log scale.
-    :param kwargs:      Keyword arguments passed to matplotlib imshow function.
-    :return:            None.
+    Parameters
+    ----------
+    scatter : Scatter
+        The scatter class whose intensity will be plotted.
+    log : bool (optional)
+        Boolean choice to plot in log scale.
+
+    Other Parameters
+    ----------------
+    kwargs : dict
+        Keyword arguments passed to matplotlib imshow function.
     """
     roi = scatter.roi
     norm = colors.SymLogNorm(1) if log else None
@@ -178,17 +232,25 @@ def intensity(scatter: Scatter, log: bool = False, **kwargs) -> None:
     _intensity_image(ax, fig, intensity_array, norm, scaled_roi, prefix, prefix, **kwargs)
 
 
-def holography(scatter_a: Scatter, scatter_b=None, log: bool = False, recons_only=True,
-               cmap='Spectral', **kwargs) -> None:
+def holography(scatter_a, scatter_b=None, log = False, recons_only=True,cmap=None, **kwargs):
     """Plot the result of inverting the holography pattern.
 
-    :param scatter_a:   First scattering pattern.
-    :param scatter_b:   Second scattering pattern (optional).
-    :param log:         Boolean choice to plot in log scale.
-    :param recons_only: Focus on the reconstruction on the sample and not the entire inverse scattering.
-    :param cmap:        Colormap for the image.
-    :param kwargs:      Keyword arguments passed to matplotlib imshow function.
-    :return:            None.
+    Parameters
+    ----------
+    scatter_a : Scatter
+        The scatter class whose intensity will be plotted.
+    scatter_b : Scatter (optional)
+        Optional second scatter class for plotting the difference.
+    log : bool (optional)
+        Boolean choice to plot in log scale.
+    recons_only : bool (optional)
+        When True, focus on the reconstruction on the sample and not the entire inverse scattering.
+    cmap : str (optional)
+        Colormap for the image
+
+    Other Parameters
+    ----------------
+    kwargs : dict
     """
     inverse, roi = invert_holography(scatter_a, scatter_b)
     if recons_only:
@@ -204,6 +266,14 @@ def holography(scatter_a: Scatter, scatter_b=None, log: bool = False, recons_onl
         else:
             inverse = inverse[0:sx // 4, sy // 2 - sy // 8: sy // 2 + sy // 8]  # reference hole along x and y
             roi = [i / 4 for i in roi]
+
+
+    if cmap is None:
+        if scatter_b is None:
+            cmap = 'viridis'
+        elif cmap is None:
+            cmap = 'Spectral'
+
     prefix, scaled_roi = _choose_scale(roi)
     norm = colors.SymLogNorm(_lin_thresh_pow(inverse)) if log else None
 
@@ -214,12 +284,20 @@ def holography(scatter_a: Scatter, scatter_b=None, log: bool = False, recons_onl
     colorscale = ax.imshow(inverse.T, origin='lower', extent=scaled_roi, norm=norm, cmap=cmap, **kwargs)
     fig.colorbar(colorscale)
 
-def scale_data(data: np.ndarray, scale: list[float]) -> np.ndarray:
+def scale_data(data, scale):
     """Scale the values in the array so that the minimum is scale[0] and maximum is scale[1].
 
-    :param data:    Array to be scaled.
-    :param scale:   Scaling range as a list: [lower, upper].
-    :return:        Scaled array.
+    Parameters
+    ----------
+    data : np.ndarray
+        Array to be scaled.
+    scale : 2-list of float
+        Scaling range as a list: [lower, upper].
+
+    Returns
+    -------
+    np.ndarray
+        Scaled array.
     """
     data = data - np.min(data)  # 0 to max+min
     data = data / np.max(data)  # 0 to 1

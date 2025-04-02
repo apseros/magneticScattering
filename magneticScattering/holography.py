@@ -1,19 +1,26 @@
-from typing import Union, Optional, Any
 import magpack.image_utils
 from magneticScattering.scatter import Sample, Scatter
 import numpy as np
 
 
-def holography_reference(sample: Union[np.ndarray, Sample], hole_size: int = 1, axis='y') -> Optional[np.ndarray]:
+def holography_reference(sample, hole_size=1, axis='y'):
     """Creates a holography reference hole for the given sample.
 
     The new sample has a fourfold increased size along the specified axis to allow for recovery.
 
-    :param sample:      The sample to process.
-    :param hole_size:   The size of reference hole in voxels.
-    :param axis:        Axis along which to add the reference.
-    :return:            The holography sample or None if directly applied to a Sample class.
+    Parameters
+    ----------
+    sample : np.ndarray | Sample
+        The sample to add holography reference holes.
+    hole_size : int (optional)
+        The size of reference hole in voxels.
+    axis : {'x', 'y', 'xy', 'yx'} (optional)
+        Axis along which to add the reference.
 
+    Returns
+    -------
+    np.ndarray (optional)
+        The holography sample or None if directly applied to a Sample class.
     """
     if isinstance(sample, Sample):
         initial_structure = np.array(sample.structure)
@@ -63,17 +70,27 @@ def holography_reference(sample: Union[np.ndarray, Sample], hole_size: int = 1, 
         return grid
 
 
-def invert_holography(scatter_a: Scatter, scatter_b: Optional[Scatter] = None) -> tuple[Any, Any]:
+def invert_holography(scatter_a, scatter_b=None):
     """Inverts the scattering pattern assuming Fourier transform holography was performed.
 
-    :param scatter_a:   First scattering pattern.
-    :param scatter_b:   Second scattering pattern (optional).
-    :return:            None.
+    Parameters
+    ----------
+    scatter_a : Scatter
+        The scatter pattern to invert.
+    scatter_b : Scatter (optional)
+        The scatter pattern to invert for taking the difference.
+
+    Returns
+    -------
+    inv : np.ndarray
+        The inverted scatter pattern.
+    roi : tuple of float
+        The corresponding real space dimensions.
     """
 
-    intensity1, len1 = scatter_a.intensity, scatter_a.sample.sample_length/2
+    intensity1, len1 = scatter_a.intensity, scatter_a.sample.sample_length / 2
     if scatter_b is not None:
-        intensity2, len2 = scatter_b.intensity, scatter_b.sample.sample_length/2
+        intensity2, len2 = scatter_b.intensity, scatter_b.sample.sample_length / 2
     else:
         intensity2, len2 = None, None
 

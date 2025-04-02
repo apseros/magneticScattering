@@ -12,6 +12,7 @@ A python package for simulating magnetic scattering and holography.
    :maxdepth: 2
    :caption: Contents:
 
-   usage
-   examples
-   magneticScattering
+   Home page <self>
+   Usage <usage>
+   Examples <examples>
+   magneticScattering <_autosummary/magneticScattering>

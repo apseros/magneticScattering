@@ -2,15 +2,24 @@ import numpy as np
 import logging
 
 
-def dft(data: np.ndarray, ft_pix: int = None, offset: float = None, upsample: float = 1) -> np.ndarray:
+def dft(data, ft_pix = None, offset = None, upsample = 1):
     """One dimensional discrete Fourier transform (DFT).
 
-    :param data:        Input array of data to transform.
-    :param ft_pix:      Number of Fourier transform points.
-    :param offset:      Frequency offset to adjust the frequency grid.
-    :param upsample:    Factor by which to upsample the frequency grid.
+    Parameters
+    ----------
+    data : np.ndarray
+        Input data to transform.
+    ft_pix : int (optional)
+        Number of Fourier transform points.
+    offset : float (optional)
+        Frequency offset to adjust the frequency grid.
+    upsample : float (optional)
+        Factor by which to upsample the frequency grid.
 
-    :returns:           Array of the computed Fourier transform.
+    Returns
+    -------
+    np.ndarray
+        Array of the computed Fourier transform.
     """
     n_pix = data.shape[0]
     ft_pix = n_pix if ft_pix is None else ft_pix
@@ -20,15 +29,25 @@ def dft(data: np.ndarray, ft_pix: int = None, offset: float = None, upsample: fl
     return np.sum(data * np.exp(-2j * np.pi * kernel), axis=1)
 
 
-def dftn_axes(data, ft_pix_vec=None, offset_vec=None, upsample_vec=None, axes=None) -> np.ndarray:
+def dftn_axes(data, ft_pix_vec=None, offset_vec=None, upsample_vec=None, axes=None):
     """Performs n-dimensional discrete Fourier transform along specified axes.
 
-    :param data:            Input array of data to transform.
-    :param ft_pix_vec:      Number of Fourier transform points.
-    :param offset_vec:      Frequency offset to adjust the frequency grid.
-    :param upsample_vec:    Factor by which to upsample the frequency grid.
-    :param axes:            Axes along which to compute Fourier transform.
-    :returns:               Array of the computed Fourier transform.
+    Parameters
+    ----------
+    data : np.ndarray
+        Input data to transform.
+    ft_pix_vec : list of int (optional)
+        Number of Fourier transform points, one element per axis.
+    offset_vec : list of int (optional)
+        Frequency offset to adjust the frequency grid, one element per axis.
+    upsample_vec : list of float (optional)
+        Factor by which to upsample the frequency grid, one element per axis.
+    axes : list of int (optional)
+        Axes along which to perform the Fourier transform.
+
+    Returns
+    -------
+        Array of the computed Fourier transform.
     """
     n_pix_vec, ndim = data.shape, data.ndim
     if axes is None:
@@ -53,14 +72,29 @@ def dftn_axes(data, ft_pix_vec=None, offset_vec=None, upsample_vec=None, axes=No
 
 
 def _dft_properties(ft_pix_vec, n_pix_vec, ndim, offset_vec, upsample_vec):
-    """Validates the dft properties for the desired dimension.
+    """Validates the dft properties for the desired dimension and convert scalars to lists when necessary.
 
-    :param ft_pix_vec:      Vector of Fourier transform points.
-    :param n_pix_vec:       Shape of in initial image.
-    :param ndim:            Number of spatial dimensions.
-    :param offset_vec:      Vector of frequency offsets.
-    :param upsample_vec:    Vector of upsampling factors.
-    :returns:               Appropriate array for Fourier transform points, offset and upsampling.
+    Parameters
+    ----------
+    ft_pix_vec : list of int (optional)
+        Vector of Fourier transform points.
+    n_pix_vec : list of int (optional)
+        Shape of in initial image.
+    ndim : int
+        Number of spatial dimensions.
+    offset_vec : list of float (optional)
+        Vector of frequency offsets.
+    upsample_vec : list of float (optional)
+        Vector of upsampling factors.
+
+    Returns
+    -------
+    ft_pix_vec : list of int (optional)
+        Vector of Fourier transform points.
+    offset_vec : list of float (optional)
+        Vector of frequency offsets.
+    upsample_vec : list of float (optional)
+        Vector of upsampling factors.
     """
 
     ft_pix_vec = n_pix_vec if ft_pix_vec is None else ft_pix_vec
@@ -72,15 +106,23 @@ def _dft_properties(ft_pix_vec, n_pix_vec, ndim, offset_vec, upsample_vec):
     return ft_pix_vec, offset_vec, upsample_vec
 
 
-def calc_params_from_roi(current: tuple[float, float, float, float], roi: tuple[float, float, float, float],
-                         datashape: tuple[int,...]) -> tuple[tuple, tuple]:
+def calc_params_from_roi(current, roi, datashape):
     """Given the current extent of the image and the desired roi to upsample, the appropriate offset and upsample values
     are provided.
 
-    :param current:         Current extent of the image.
-    :param roi:             Desired roi.
-    :param datashape:       Desired shape of the data.
-    :returns:               Corresponding offset and upsample values.
+    Parameters
+    ----------
+    current : tuple[float, float, float, float]
+        Current extent of the image.
+    roi : tuple[float, float, float, float]
+        Desired roi.
+    datashape : tuple of int
+        Desired shape of the data.
+
+    Returns
+    -------
+    offset, upsample : tuple of float
+        Offset and upsample values that will yield the desired roi when the discrete Fourier transform is calculated.
     """
     shape = np.array(datashape)
     current = np.array(current)

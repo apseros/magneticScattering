@@ -9,14 +9,27 @@ from typing import cast
 
 
 def _typecast_roi(roi):
-    """Casts a roi array into tuple[float,float,float,float] for type matching."""
+    """Casts a roi array into tuple[float,float,float,float].
+
+    Parameters
+    ----------
+    roi : array_like
+
+    Returns
+    -------
+    4-tuple of float
+        Type-casted region of interest / extent
+    """
     return cast(tuple[float, float, float, float], roi)
 
 
-def pauli() -> np.ndarray:
+def pauli():
     """Returns an array of the identity and three Pauli matrices.
 
-    :return:    Numpy array of shape (4, 2, 2).
+    Returns
+    -------
+    np.ndarray
+        Numpy array containing the identity and three Pauli matrices with shape (4, 2, 2).
     """
     p_matrix = np.zeros([4, 2, 2], dtype=np.complex128)
     p_matrix[0] = np.eye(2)
@@ -26,21 +39,38 @@ def pauli() -> np.ndarray:
     return p_matrix
 
 
-def en2wave(energy: float) -> float:
+def en2wave(energy):
     """Converts energy in eV to wavelength in m.
 
-    :param energy:  Energy in electronvolts.
-    :return:        Wavelength in meters."""
+    Parameters
+    ----------
+    energy : float
+        Energy in electronvolts.
+
+    Returns
+    -------
+    float
+        Corresponding wavelength in m.
+    """
     return 1.24e-6 / energy
 
 
-def vec2np(vec: Union[float, list, complex, int, np.ndarray], size=2, dtype=np.float64):
+def vec2np(vec, size=2, dtype=np.float64):
     """Converts a scalar or array value to an appropriately-sized numpy array.
 
-    :param vec:         Scalar value or list of scalar values.
-    :param size:        Size of the resulting numpy array.
-    :param dtype:       Datatype of the numpy array.
-    :return:            Numpy array.
+    Parameters
+    ----------
+    vec : np.ndarray | list | tuple
+        Scalar value or list of scalar values.
+    size : int (optional)
+        Desired size of array.
+    dtype : np.dtype (optional)
+        Desired dtype of array.
+
+    Returns
+    -------
+    np.ndarray
+        Numpy array with provided size and datatype.
     """
     if isinstance(vec, (tuple, list)):
         if len(vec) == 1:
@@ -60,16 +90,19 @@ def vec2np(vec: Union[float, list, complex, int, np.ndarray], size=2, dtype=np.f
 
 
 class Beam:
-    """Describes the properties of the beam.
+    """Describes the properties of the beam."""
 
-    Attributes:
-        :wavelength: :class:`float`:     The wavelength of the beam [m].
-        :fwhm: :class:`np.ndarray`:      The full width at half maximum of the beam in x and y.
-        :pol: :class:`list[float]`:      The polarization of the beam in Stokes parameters, 4 component list.
-    """
-
-    def __init__(self, wavelength: float, fwhm: Union[np.ndarray, list[float], float],
-                 pol: Union[np.ndarray, list[float]]):
+    def __init__(self, wavelength, fwhm, pol):
+        """
+        Parameters
+        ----------
+        wavelength : float
+            The wavelength of the beam in meters.
+        fwhm : np.ndarray
+            The full width at half maximum of the beam in the x and y directions.
+        pol : 4-list of float
+            The polarization of the beam in Stokes parameters.
+        """
         self._wavelength = wavelength
         self._fwhm = vec2np(fwhm)
         self._beam_sigma = self._fwhm / np.sqrt(8 * np.log(2))
@@ -78,12 +111,26 @@ class Beam:
         self._change_tracker = [lambda x: None]
 
     def calc_density_matrix(self):
-        """Converts the Stokes polarization vector to a density matrix
+        r"""Converts the Stokes polarization vector to a density matrix
 
+        Returns
+        -------
+        np.ndarray
+            The density matrix of the beam.
+        np.ndarray
+            The degree of polarization.
+
+        Notes
+        -----
         The expression for converting the Strokes polarization "vector" to a density matrix is:
-        rho = 1 / 2 * (P . sigma)
-        where P is the four-dimensional vector and sigma is the vector containing the Pauli spin matrices and the
-        identity matrix (sigma_0 = I).
+
+        .. math::
+
+            \rho = \frac{1}{2}(\vec{P} \cdot \vec{\sigma})
+
+
+        where :math:`\vec{P}` is the Stokes polarization vector and :math:`\sigma` is the vector containing the Pauli spin
+        matrices and the identity matrix :math:`(\sigma_0 = \mathbf{I})`.
         """
         pol_intensity = np.sum(self._pol[-3:] ** 2)
         pol_norm = self._pol[0] ** 2
@@ -158,17 +205,19 @@ class Beam:
 
 
 class Sample:
-    """Describes the sample properties.
+    """Describes the sample properties."""
 
-    Attributes:
-        :sample_length: :class:`np.ndarray`:         The dimensions of the sample [m].
-        :scattering_factors: :class:`list[complex]`: List of the three complex scattering factors.
-        :structure: :class:`np.ndarray`:             The magnetic configuration of the sample, (4, X, Y) numpy array.
-        :reference_structure: :class:`np.ndarray`:   Backup of the original structure for when the structure is rotated.
-    """
-
-    def __init__(self, sample_length: Union[np.ndarray, list[float], float],
-                 scattering_factors: Union[list[complex], np.ndarray], structure: np.ndarray):
+    def __init__(self, sample_length, scattering_factors, structure):
+        """
+        Parameters
+        ----------
+        sample_length : array_like
+            The dimensions of the sample in meters.
+        scattering_factors : 3-list of complex
+            The complex scattering factors corresponding to charge, XMCD and XMLD.
+        structure : np.ndarray
+            The magnetic (and electronic) configuration of the sample.
+        """
         self._sample_length = vec2np(sample_length)
         self._scattering_factors = vec2np(scattering_factors, 3, dtype=np.complex128)
 
@@ -195,7 +244,13 @@ class Sample:
         self._change_tracker.append(parent_tracker_function)
 
     def calc_pix_size(self):
-        """Calculates the size of a single pixel in the structure."""
+        """Calculates the size of a single pixel in the structure.
+
+        Returns
+        -------
+        np.ndarray
+            Pixel size along the x and y dimensions.
+        """
         return np.divide(self._sample_length, self.shape)
 
     @property
@@ -236,7 +291,7 @@ class Sample:
         [f('pix_size') for f in self._change_tracker]
 
     @property
-    def structure(self) -> np.ndarray:
+    def structure(self):
         """The charge and three magnetization components of the sample. """
         return self._structure
 
@@ -250,13 +305,23 @@ class Sample:
         [f('structure') for f in self._change_tracker]
 
     def get_extent(self):
-        """The extent of the sample for plotting."""
+        """The extent of the sample for plotting.
+
+        Returns
+        -------
+        np.ndarray
+            Array with shape (4,) describing the extent of the sample for plotting."""
         extent_x = self.sample_length[0] * np.array([-0.5, 0.5])
         extent_y = self.sample_length[1] * np.array([-0.5, 0.5])
         return np.hstack([extent_x, extent_y])
 
-    def get_coordinates(self) -> list[np.ndarray]:
-        """Meshgrid spanning the sample."""
+    def get_coordinates(self):
+        """Meshgrid spanning the sample.
+
+        Returns
+        -------
+        list of np.ndarray
+            list containing the coordinates obtained from meshgrid."""
         nx, ny = self.shape
         extent = self.get_extent()
         xx, yy = np.linspace(extent[0], extent[1], nx), np.linspace(extent[2], extent[3], ny)
@@ -264,25 +329,28 @@ class Sample:
 
 
 class Geometry:
-    """Defines the geometry of the experiment.
+    """Defines the geometry of the experiment."""
 
-    Attributes:
-        :angle: :class:`float`:               The angle of incidence (and scattering) of the beam [degrees].
-        :detector_distance: :class:`float`:   The distance between the sample and the detector [m].
-    """
-
-    def __init__(self, angle: float, detector_distance: float):
+    def __init__(self, angle, detector_distance):
+        """
+        Parameters
+        ----------
+        angle : float
+            The angle of incidence (and scattering) of the beam in degrees.
+        detector_distance
+            The distance between the sample and the detector in meters.
+        """
         self._angle = angle
         self._detector_distance = detector_distance
         self._change_tracker = [lambda x: None]
 
     @property
     def tracker(self):
+        """Function to notify parent of any changes to the class."""
         return self._change_tracker
 
     @tracker.setter
     def tracker(self, parent_tracker_function):
-        """Function to notify parent of any changes to the class."""
         self._change_tracker = parent_tracker_function
 
     @property
@@ -307,13 +375,17 @@ class Geometry:
 
 
 class Scatter:
-    def __init__(self, beam: Beam, sample: Sample, geometry: Geometry):
-        """Initializes the Scatter class and calculates the scattering pattern.
-
-        Attributes:
-            :beam: :class:`Beam`:           The properties of the beam.
-            :sample: :class:`Sample`:       The sample being measured.
-            :geometry: :class:`Geometry`:   The geometry of the experiment.
+    """Initializes the Scatter class and calculates the scattering pattern."""
+    def __init__(self, beam, sample, geometry):
+        """
+        Attributes
+        ----------
+        beam : :class:`Beam`
+            The properties of the beam.
+        sample : :class:`Sample`
+            The sample being measured.
+        geometry : :class:`Geometry`
+            The geometry of the experiment.
         """
 
         self.beam = beam
