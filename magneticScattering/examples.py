@@ -11,7 +11,9 @@ pol_dict = {'LH': [1, 1, 0, 0], 'LV': [1, -1, 0, 0],
 
 
 def dichroism():
-    """Simulated the circular magnetic dichroism from a labyrinthine pattern."""
+    """Simulated the circular magnetic dichroism from a labyrinthine pattern.
+
+    See :ref:`example` for a more detailed description."""
     energy = 706  # energy of the beam in eV
     fwhm = 20e-6  # full width at half maximum of the beam in meters
     angle = 0  # angle of incidence

@@ -98,7 +98,7 @@ class Beam:
         ----------
         wavelength : float
             The wavelength of the beam in meters.
-        fwhm : np.ndarray
+        fwhm : np.ndarray | 2-tuple | 2-list
             The full width at half maximum of the beam in the x and y directions.
         pol : 4-list of float
             The polarization of the beam in Stokes parameters.

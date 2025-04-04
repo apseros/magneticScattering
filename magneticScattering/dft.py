@@ -112,9 +112,9 @@ def calc_params_from_roi(current, roi, datashape):
 
     Parameters
     ----------
-    current : tuple[float, float, float, float]
+    current : 4-tuple of float
         Current extent of the image.
-    roi : tuple[float, float, float, float]
+    roi : 4-tuple of float
         Desired roi.
     datashape : tuple of int
         Desired shape of the data.

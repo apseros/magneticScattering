@@ -189,7 +189,7 @@ def intensity_interactive(scatter: Scatter, log: bool = False, **kwargs) -> tupl
         spancoords='data',
         interactive=True,
         props=dict(facecolor='None', edgecolor='red'))
-    fig.suptitle("Select region to view in higher resolution.")
+    fig.suptitle("Select region to view in higher resolution:")
     _intensity_image(ax, fig, intensity_array, norm, scaled_roi, prefix, prefix, **kwargs)
     fig.canvas.mpl_connect('key_press_event', selector)
     plt.show()

@@ -1,19 +1,36 @@
-Magnetic Diffraction
-====================
+magneticScattering
+==================
 
-This package can be used to simulate scattering from a magnetic structure. To to this, three classes describing the
-experimental setup must first be specified:
+This package can be used to simulate magnetic scattering and Fourier transform holography from a structure.
+
+Installation
+------------
+magneticScattering can be installed through pip:
+
+.. code-block:: console
+
+   (.venv)$ pip install magneticScattering
+
+Documentation
+-------------
+Comprehensive documentation with examples is available online at
+`readthedocs <https://magneticScattering.readthedocs.io/en/latest/index.html>`_.
+
+
+Quickstart
+----------
+To calculate the observed magnetic scattering from a system, three classes describing the experimental setup must
+first be specified, namely the:
 
 1. Sample
 2. Beam
 3. Geometry
 
-
-These classes are then passed to the Scatter class in order to calculate the resulting scattering pattern. In the
+These classes are then passed to the Scatter class in order to perform the calculation. In the
 following sections, these parameters are described in more detail and examples are provided.
 
 Sample
-------
+^^^^^^
 
 The Sample is initialized with the following parameters:
 
@@ -21,17 +38,17 @@ The Sample is initialized with the following parameters:
 
     Sample(sample_length, scattering_factors, magnetic_configuration)
 
--``sample_length``: size of the sample in meters as a scalar or a two-component vector in meters
+- ``sample_length``: size of the sample in meters as a scalar or a two-component vector in meters
 
--``scattering_factors``: scattering factors list ``[f0, f1, f2]``. These are the complex pre-factors corresponding to the
-charge, magnetic circular and magnetic linear scattering. The real part is the refractive index (or phase) and the
-imaginary part is the dissipation (absorption).
+- ``scattering_factors``: scattering factors list ``[f0, f1, f2]``. These are the complex pre-factors corresponding to the
+  charge, magnetic circular and magnetic linear scattering. The real part is the refractive index (or phase) and the
+  imaginary part is the dissipation (or absorption)
 
--``structure``: the magnetic configuration of the sample as a numpy array with shape ``(3, nx, ny)`` (charge component
-will be inferred) or ``(4, nx, ny)`` with the charge component at index ``0`` (see :ref:`struct_label`.)
+- ``structure``: the magnetic configuration of the sample as a numpy array with shape ``(3, nx, ny)`` (charge component
+  will be inferred) or ``(4, nx, ny)`` with the charge component at index ``0``
 
 Beam
-----
+^^^^
 
 The Beam is initialized with the following parameters:
 
@@ -43,11 +60,11 @@ The Beam is initialized with the following parameters:
 
 - ``beam_fwhm``: full width at half maximum of the beam as a scalar or a two-component vector in meters.
 
-- ``polarization``: four-component polarization in the form of a Stokes vector (see :ref:`stokes_label`.).
+- ``polarization``: four-component polarization in the form of a Stokes vector.
 
 
 Geometry
---------
+^^^^^^^^
 
 The Geometry is initialized with the following parameters:
 
@@ -65,66 +82,37 @@ negative *y*-direction when ``angle_d = 90``.
 The sample plane is the *x-y* plane, such that the :math:`m_x` and :math:`m_y` components are in-plane, and :math:`m_z`
 is out of plane.
 
-
 Scatter
--------
+^^^^^^^
 
-To compute the scattering pattern, call the Scatter class with the three classes from before:
+To compute the scattering pattern, call the Scatter class with the three classes from before as arguments:
 
 .. code-block:: python
 
     Scatter(Sample, Beam, Geometry)
 
 The intensity of the scattering can be obtained from Scatter.intensity or plotted directly using functions in the
-`plot` submodule. Some examples are:
+`plot` submodule. For example, for a labyrinthine structure
 
-.. code-block:: python
+.. image:: doc/source/_static/images/structure.png
+    :width: 50%
+    :alt: Magnetization components of a labyrinthine magnetic domain structure
 
-    plot.structure(Sample, quiver=True)             # plot the components of the magnetic structure
-    plot.intensity(Scatter, log=True)               # plot the intensity of the scattering
-    plot.difference(Scatter_a, Scatter_b, log=True) # plot the difference between two scattering patterns
+the full-view scattering pattern (left) can be used to isolate a region of interest (left, red rectangle) to calculate
+a higher resolution scattering. The difference between the scattering obtained from the two circular polarizations is
+shown on the right
 
-.. _stokes_label:
+|img1| |img2|
 
-Stokes Parameters
------------------
+.. |img1| image:: doc/source/_static/images/full_scattering.png
+    :width: 25%
+    :alt: Full view of the scattering pattern, with a red rectangle representing the desired region of interest
 
-The Stokes parameters are four components that define the polarization state of light.
-For convenience, they are combined to form a vector :math:`(S_0,S_1,S_2,S_3)` defined as follows:
 
--:math:`S_0`: Intensity of the light, conventionally normalized to unity.
 
--:math:`S_1`: Component of light that is linearly polarized. :math:`+1` corresponds to purely
-linear horizontal polarization and :math:`-1` to purely linear vertical.
-
--:math:`S_2`: Component of light that is linearly polarized along the diagonals. :math:`+1` corresponds to
-purely :math:`+45^\circ` polarization, :math:`-1` to purely :math:`-45^\circ` polarization.
-
--:math:`S_3`: Component of light that is circularly polarized. :math:`+1` corresponds to purely right-handed circular
-polarization, :math:`-1` to purely left-handed circular polarization.
-
-.. _struct_label:
-
-Structure
----------
-
-The magnetic vector field has three components, :math:`(m_x,m_y,m_z)` and extends is two-dimensional in space.
-Therefore, it is represented here as a numpy array of shape ``(3, nx, ny)``. The charge component can also be specified
-using a ``(4, nx, ny)`` shaped numpy array, where the index 0 corresponds to the electron density of the sample.
-
-To create such an array this array given its individual, 2D scalar components, :math:`m_x,\, m_y,\, m_z`, one can use:
-
-.. code-block:: python
-
-    structure = np.array([mx, my, mz])
-
-:math:`m_x,\, m_y,\, m_z` must all be the same size and should be two-dimensional, e.g. ``(nx, ny)`` and should have
-the same physical properties (e.g., lateral dimension)
-
-Structures can be made or imported using the structures header. Some examples are:
-
-when the beam is perpendicular to the sample (``angle = 0``) the magnetization components :math:`m_x,\,m_y` are in the
-plane of the sample, while the magnetization component :math:`m_z` is out of the plane (and parallel to the beam).
+.. |img2| image:: doc/source/_static/images/scattering_roi.png
+    :width: 25%
+    :alt: Higher resolution scattering pattern of the region of interest
 
 References
 ----------
@@ -133,6 +121,3 @@ van der Laan, G., "Theory from Soft X-ray resonant magnetic scattering of magnet
 https://doi.org/10.1016/j.crhy.2007.06.004
 
 
-Documentation
--------------
-Comprehensive documentation is available online at [readthedocs](https://magneticScattering.readthedocs.io/en/latest/index.html).
