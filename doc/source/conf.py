@@ -14,7 +14,7 @@ sys.path.insert(0, basedir)
 project = 'magneticScattering'
 copyright = '2025, Andreas Apseros'
 author = 'Andreas Apseros'
-release = '0.2.0'
+release = '0.2.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
